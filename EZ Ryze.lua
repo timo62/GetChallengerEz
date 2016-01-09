@@ -6,6 +6,7 @@
 
 ]]
 
+if myHero.charName ~= "ryze" then return end 
 if not _G.UPLloaded then
     if FileExist(LIB_PATH .. "/UPL.lua") then
         require("UPL")
