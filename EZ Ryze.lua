@@ -41,11 +41,12 @@ function OnLoad()
    
     UPL:AddSpell(_Q, spells.Q)
         --MENU
-    Menu = scriptConfig("EZ Ryze", "ez ryzee")
-    Menu:addSubMenu("Key Binds", "Key")
+    Menu = scriptConfig("{ EZ Ryze } ", "ez ryzee")
+    Menu:addSubMenu("Key Settings", "Key")
         Menu.Key:addParam("combo", "Combo Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte(" "))
-        Menu.Key:addParam("harass", "Harass Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("C"))
         Menu.Key:addParam("laneclear", "Lane Clear Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("V"))
+        Menu.Key:addParam("lasthit", "Last Hit Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte ("X"))
+        Menu.Key:addParam("Toggle", "Auto Skill Farm", SCRIPT_PARAM_ONKEYTOGGLE, false, string.byte("T"))
  
     Menu:addSubMenu("Combo", "c")
         Menu.c:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
@@ -53,19 +54,27 @@ function OnLoad()
         Menu.c:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)
         Menu.c:addParam("useR", "Use R", SCRIPT_PARAM_ONOFF, true)
 
-    Menu:addSubMenu("Harass", "h")
-        Menu.h:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
-        Menu.h:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, true)
-        Menu.h:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)
-
     Menu:addSubMenu("Lane Clear", "l")
         Menu.l:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
         Menu.l:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, true)
         Menu.l:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)
+        Menu.l:addParam("useR", "Use R", SCRIPT_PARAM_ONOFF, false)
+
+    Menu:addSubMenu("Last Hit", "lh")
+        Menu.lh:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
+        Menu.lh:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, false)
+        Menu.lh:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)
+
+    Menu:addSubMenu("Auto Skill Farm", "tg")
+        Menu.tg:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
 
     Menu:addSubMenu("Prediction", "pred")
         Menu.pred:addParam("qhs", "Q Hit Chance", SCRIPT_PARAM_SLICE, 1,1,3)
         UPL:AddToMenu2(Menu.pred)
+
+    Menu:addSubMenu("Drawing", "draw")
+        Menu.draw:addParam("qd", "Draw Q Range", SCRIPT_PARAM_ONOFF, true)
+        Menu.draw:addParam("wd", "Draw W Range", SCRIPT_PARAM_ONOFF, true)
  
 end
  
@@ -74,9 +83,22 @@ function OnTick()
         -- Make the target selector look for closer enemys again
             ts:update()
 
-      if Menu.Key.laneclear then
-      Clear()
-			end
+        if Menu.Key.laneclear then
+            Clear()
+        end
+
+        if Menu.Key.lasthit then
+            Lasthit()
+        end
+
+
+        if Menu.Key.Toggle then
+            Lasthith()
+        end
+
+        if Menu.Key.harass then
+            Harass()
+        end
      
         --Combo
     if (ts.target ~= nil) then
@@ -109,29 +131,6 @@ function OnTick()
 end
 
 
-        --Harass
-    if (ts.target ~= nil) then
-                -- C pressed & Spell Q
-        if (Menu.Key.harass and Menu.h.useQ) then
-            CastQ(ts.target)
-        end
- 
-        -- ^ & Spell W
-        if (Menu.Key.harass and Menu.h.useW) then
-            if(myHero:CanUseSpell(_W) == READY) then
-                -- Cast spell on enemy
-                CastSpell(_W, ts.target)
-            end
-        end
-        -- ^ & Spell E            
-        if (Menu.Key.harass and Menu.h.useE) then
-            if (myHero:CanUseSpell(_E) == READY) then
-                -- Cast spell on enemy
-                CastSpell(_E, ts.target)
-            end
-        end
-        
-    end  
 
         --LaneClear
 function Clear()
@@ -142,8 +141,9 @@ function Clear()
             local eDmg = getDmg("E", minion, myHero)
             if Menu.l.useE and myHero:CanUseSpell(_E) == READY and eDmg >= minion.health then
                 CastSpell(_E,minion)
-            else
-                CastSpell(_E,minion)
+            else 
+                CastSpell(_E, minion)
+             
             end
             local wDmg = getDmg("W", minion, myHero)
             if Menu.l.useW and myHero:CanUseSpell(_W) == READY and not myHero:CanUseSpell(_E) == READY and wDmg >= minion.health then
@@ -157,18 +157,85 @@ function Clear()
             else
                 CastQ(minion)
             end
+
+            if Menu.l.useR and myHero:CanUseSpell(_R) == READY then
+                CastSpell(_R)
+            end
+
         end
     end
  end
  
+        --Last Hit
+        function Lasthit()
+                if Menu.lh.useQ then
+                    EnemyMinions:update()
+                    for i, minion in pairs (EnemyMinions.objects) do
+                        local qDmg = getDmg("Q", minion, myHero)
+                        if Menu.lh.useQ and myHero:CanUseSpell(_Q) == READY and qDmg >= (minion.health+20) then
+                            CastQ(minion)
+                        end
+                    end
+                end
+        
+
+                if Menu.lh.useW then
+                    EnemyMinions:update()
+                    for i, minion in pairs (EnemyMinions.objects) do
+                        local wDmg = getDmg("W", minion, myHero)
+                        if Menu.lh.useW and myHero:CanUseSpell(_W) == READY and wDmg >= minion.health then
+                            CastSpell(_W,minion)
+                        end
+                    end
+                end
+
+                if Menu.lh.useE then
+                    EnemyMinions:update()
+                    for i, minion in pairs(EnemyMinions.objects) do
+                        local eDmg = getDmg("E", minion, myHero)
+                        if Menu.lh.useE and myHero:CanUseSpell(_E) == READY and eDmg >= (minion.health+20) then
+                            CastSpell(_E,minion)
+
+                        end
+                    end
+                end
+        end
 
 
-function CastQ(target)
-    if not target then return end
-    CastPosition, HitChance, HeroPosition = UPL:Predict(_Q, myHero, target)
+        -- 
+        --Last Hit Q Auto
+        function Lasthith()
+                if Menu.tg.useQ then
+                    EnemyMinions:update()
+                    for i, minion in pairs (EnemyMinions.objects) do
+                        local qDmg = getDmg("Q", minion, myHero)
+                        if Menu.tg.useQ and myHero:CanUseSpell(_Q) == READY and qDmg >= (minion.health +20) then
+                            CastQ(minion)
+                        end
+                    end
+                end
+        end
+
+
+function CastQ(target, minion)
+    if not target and minion then return end
+    CastPosition, HitChance, HeroPosition = UPL:Predict(_Q, myHero, target, minion)
     if(myHero:CanUseSpell(_Q) == READY) and HitChance >= Menu.pred.qhs then
         DelayAction(function ()
             CastSpell(_Q, CastPosition.x,CastPosition.z)
         end,0.2)
+    end
+end
+
+-- Drawing graphics
+function OnDraw()
+    if (Menu.draw.qd) then
+        -- Q Range
+        DrawCircle(myHero.x, myHero.y, myHero.z, 900, 0x111111)
+    end
+
+    if (Menu.draw.wd) then
+        -- W Range
+        DrawCircle(myHero.x, myHero.y, myHero.z, 600, 0x113211)
     end
 end
