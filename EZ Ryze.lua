@@ -6,7 +6,10 @@
 
 ]]
 
-local LocalVersion = "0.1"
+local PassiveStacks = 0
+local PassiveCharged = false
+
+local LocalVersion = "0.3"
 local AutoUpdate = true
 
 local serveradress = "raw.githubusercontent.com"
@@ -52,6 +55,7 @@ local ts
         end
     end
 
+
         function SayHello()
             -- Print to the chat area
             PrintChat("<font color=\"#AA0000\"><b>[Ez Ryze] </b></font>".."<font color=\"#01cc9c\"><b>Loaded! Good Luck!</b></font>")
@@ -76,30 +80,36 @@ local ts
                 Menu:addSubMenu("Key Settings", "Key")
                     Menu.Key:addParam("combo", "Combo Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte(" "))
                     Menu.Key:addParam("laneclear", "Lane Clear Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("V"))
-                    Menu.Key:addParam("harass", "Harass Key", SCRIPT_PARAM_ONOFF, false, string.byte("C"))
+                    --[[Menu.Key:addParam("harass", "Harass Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("C"))]]
                     Menu.Key:addParam("lasthit", "Last Hit Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte ("X"))
                     Menu.Key:addParam("Toggle", "Auto Skill Farm", SCRIPT_PARAM_ONKEYTOGGLE, false, string.byte("T"))
 
                 Menu:addSubMenu("Combo", "c")
-                    Menu.c:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.3")
+                    Menu.c:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.4")
                     -- Create conditionals in your menu/keybinds or in certain situations
                     Menu.c:addParam("comboMode", "Set Combo Mode", SCRIPT_PARAM_LIST, 1, {"R W Q E", "W Q E Q"}) -- Combo list default set at 1 (Q W E R)
 
+                --[[Menu:addSubMenu("Harass", "h")
+                    Menu.h:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.3")
+                    Menu.h:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
+                    Menu.h:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, true)
+                    Menu.h:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)]]
+
                 Menu:addSubMenu("Lane Clear", "l")
-                    Menu.l:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.3")
+                    Menu.l:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.4")
                     Menu.l:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
                     Menu.l:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, true)
                     Menu.l:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)
                     Menu.l:addParam("useR", "Use R", SCRIPT_PARAM_ONOFF, false)
 
                 Menu:addSubMenu("Last Hit", "lh")
-                    Menu.lh:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.3")
+                    Menu.lh:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.4")
                     Menu.lh:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
                     Menu.lh:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, false)
                     Menu.lh:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)
 
                 Menu:addSubMenu("Auto Skill Farm", "tg")
-                    Menu.tg:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.3")
+                    Menu.tg:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.4")
                     Menu.tg:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
 
                 Menu:addSubMenu("Prediction", "pred")
@@ -109,12 +119,15 @@ local ts
                 Menu:addSubMenu("Drawing", "draw")
                     Menu.draw:addParam("qd", "Draw Q Range", SCRIPT_PARAM_ONOFF, true)
                     Menu.draw:addParam("wd", "Draw W Range", SCRIPT_PARAM_ONOFF, true) 
-ts = TargetSelector(TARGET_LOW_HP_PRIORITY,650)
-ts.name = "Ryze"
-Menu:addTS(ts)
+
+
+                ts = TargetSelector(TARGET_LOW_HP_PRIORITY,650)
+                ts.name = "Ryze"
+                Menu:addTS(ts)
         end
 
         function OnTick()
+
                 checks()
             if Menu.Key.combo and (ts.target ~= nil) then
                 if Menu.c.comboMode == 1 then 
@@ -130,8 +143,24 @@ Menu:addTS(ts)
                 elseif Menu.Key.Toggle then
                     Lasthith()
                 elseif Menu.Key.harass then
-                    Harass()
+                    harass1()
                 end
+        end
+
+
+
+        function OnApplyBuff(source, unit, buff) 
+            if source and source.isMe and buff and buff.name and buff.name:find("ryzepassivecharged") then
+                PassiveStacks = 1
+                PassiveCharged = true
+            end
+        end
+
+
+        function OnUpdateBuff(unit, buff, stacks)
+            if unit and unit.isMe and buff and buff.name and buff.name:find("ryzepassivestack") then
+                PassiveStacks = stacks
+            end
         end
 
 
@@ -147,7 +176,7 @@ Menu:addTS(ts)
 
         -- Combo RWQE during you're passive
         function Combo1()
-            if Menu.Key.combo and Rready then
+            if Menu.Key.combo and Rready and PassiveStacks >= 2 then
                 CastSpell(_R)
 
             elseif Menu.Key.combo and Wready then
@@ -182,23 +211,22 @@ Menu:addTS(ts)
         end
 
 
-        -- Combo WQEQ WQEQ ... pref use at 3 Stacks/Harass
-        function Harass1()
-            if Menu.Key.combo and Menu.c.useW and Menu.c.useQ and Menu.c.useE and Wready and Qready and Eready  then
-                CastSpell(_W, ts.target)
-                CastQ(ts.target)
-                CastSpell(_E, ts.target)
-            end
-        end
+        --[[-- Combo RWQE during you're passive
+        function harass1()
 
-        -- Harass2 soon
-        function Harass2( )
-            if Menu.Key.combo and Menu.c.useW and Menu.c.useQ and Menu.c.useE and Wready and Qready and Eready  then
+            if Menu.Key.harass and Wready then
                 CastSpell(_W, ts.target)
+
+
+            elseif Menu.Key.harass and Qready then
                 CastQ(ts.target)
+
+            elseif Menu.Key.harass and Eready then
                 CastSpell(_E, ts.target)
             end
-        end
+
+        end]]
+
         
         --LaneClear
         function Clear()
@@ -290,3 +318,26 @@ Menu:addTS(ts)
                 end,0.2)
             end
         end
+
+
+        function OnDraw()
+                if (Menu.draw.qd) then
+                -- Q Range
+                DrawCircle(myHero.x, myHero.y, myHero.z, 900, 0x111111)
+                end
+
+                if (Menu.draw.wd) then
+                -- W Range
+                DrawCircle(myHero.x, myHero.y, myHero.z, 600, 0x113211)
+                end
+                local pos = WorldToScreen(D3DXVECTOR3(myHero.x, myHero.y, myHero.z))
+ 
+                if PassiveStacks >= 1 then
+                   
+                    --DrawText("XXX", TextSize, X, Y, HexColor)
+                    DrawText("Stack:"..PassiveStacks, 18, pos.x, pos.y, 0xFFFFFF00)
+                    elseif PassiveStacks == 5 then
+                        DrawText("Stack: 5 ", 18, pos.x, pos.y, 0xFFFFFF00)
+                   
+                end
+            end
