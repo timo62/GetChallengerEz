@@ -225,9 +225,9 @@ function CastQ(target, minion)
             CastSpell(_Q, CastPosition.x,CastPosition.z)
         end,0.2)
     end
-<<<<<<< HEAD
+
 end
-=======
+
 end
 
 -- Drawing graphics
@@ -242,4 +242,4 @@ function OnDraw()
         DrawCircle(myHero.x, myHero.y, myHero.z, 600, 0x113211)
     end
 end
->>>>>>> origin/master
+
