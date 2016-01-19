@@ -8,7 +8,7 @@
 ]]
 
 --Updater
-local LocalVersion = "0.1"
+local LocalVersion = "0.2"
 local AutoUpdate = true
 
 local serveradress = "raw.githubusercontent.com"
@@ -61,6 +61,7 @@ if myHero.charName ~= "Renekton" then return end
             PrintChat("<font color=\"#AA0000\"><b>[Ez Renekton] </b></font>".."<font color=\"#01cc9c\"><b>By: timo62</b></font>")
             end
 
+
             function OnLoad()
                 FindUpdates()
                 -- Minions 
@@ -73,6 +74,7 @@ if myHero.charName ~= "Renekton" then return end
                 }
    
                 UPL:AddSpell(_E, spells.E)
+
                 SayHello()
 
 
@@ -82,18 +84,18 @@ if myHero.charName ~= "Renekton" then return end
                         Menu.Key:addParam("combo", "Combo Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte(" "))
                         Menu.Key:addParam("laneclear", "Lane Clear Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("K"))
                         --Menu.Key:addParam("jungleclear", "Jungle Clear Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("V"))
-                        --Menu.Key:addParam("harass", "Harass Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("C"))
+                        Menu.Key:addParam("harass", "Harass Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("C"))
                         --Menu.Key:addParam("lasthit", "Last Hit Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("X"))
-                       -- Menu.Key:addParam("Toggle", "Auto Stun near Enemy", SCRIPT_PARAM_ONKEYTOGGLE, false, string.byte("T"))
+                        Menu.Key:addParam("flee", "Fast E", SCRIPT_PARAM_ONKEYDOWN, false, string.byte("T"))
                     Menu:addSubMenu("|->Combo", "c")
                         Menu.c:addParam("x1", "-[    Renekton    ]-", SCRIPT_PARAM_INFO, "Ver 1.0")
                         Menu.c:addParam("comboMode", "Set Combo Mode", SCRIPT_PARAM_LIST, 1, {"E W Q E"--[["W E Q E"]]})
 
-                    --[[Menu:addSubMenu("|->Harass", "h")
+                    Menu:addSubMenu("|->Harass", "h")
                         Menu.h:addParam("x1", "-[    Renekton    ]-", SCRIPT_PARAM_INFO, "Ver 1.0")
                         Menu.h:addParam("harassOn", "Harass Mode On/Off", SCRIPT_PARAM_ONOFF, false)
                         Menu.h:addParam("harassMode", "Set Harass Mode", SCRIPT_PARAM_LIST, 1, {"E W Q E"})
-                        Menu.h:addParam("x2", "Harass will Auto E back after combo", SCRIPT_PARAM_INFO, " ")]]
+                        Menu.h:addParam("x2", "Harass will Auto E back after combo", SCRIPT_PARAM_INFO, " ")
 
                     Menu:addSubMenu("|->Lane Clear", "l")
                         Menu.l:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
@@ -113,7 +115,7 @@ if myHero.charName ~= "Renekton" then return end
                         Menu.pred:addParam("ehs", "E Hit Chance", SCRIPT_PARAM_SLICE, 1,1,3)
                         UPL:AddToMenu2(Menu.pred)
 
-                    Menu:addSubMenu("Drawing", "draw")
+                    Menu:addSubMenu("|->Drawing", "draw")
                         Menu.draw:addParam ("qd", "Draw Q Range", SCRIPT_PARAM_ONOFF, true)
                         Menu.draw:addParam ("ed", "Draw E Range", SCRIPT_PARAM_ONOFF, true)
                         Menu.draw:addParam ("aad", "Draw AA Range", SCRIPT_PARAM_ONOFF, true)
@@ -128,6 +130,12 @@ if myHero.charName ~= "Renekton" then return end
 
             function OnTick()
 
+
+                if SelectedTarget ~= nil then 
+                    Target = SelectedTarget 
+                else Target = ts.target 
+                end
+
                 --function OnDraw()
                 --  DrawTextA(myHero:getItem(ITEM_1).id)
                 --end
@@ -138,7 +146,7 @@ if myHero.charName ~= "Renekton" then return end
 
                 checks()
 
-                if Menu.Key.combo and (ts.target ~= nil) then
+                if Menu.Key.combo and (Target ~= nil) then
                     if Menu.c.comboMode == 1 then
                         Combo1()
                    -- else
@@ -151,8 +159,36 @@ if myHero.charName ~= "Renekton" then return end
                         lasthit()
                     elseif Menu.Key.harass then
                         Harass1()
+                    elseif Menu.Key.flee then
+                        flee()
                     end 
             end
+
+
+
+
+        function OnWndMsg(msg, key)
+            if msg == WM_LBUTTONDOWN then
+                local minD = 200
+                    for i, unit in ipairs(GetEnemyHeroes()) do
+                        if ValidTarget(unit) and not unit.dead then
+                            if GetDistance(unit, mousePos) <= minD or target == nil then
+                                minD = GetDistance(unit, mousePos)
+                                target = unit
+                            end
+                        end
+                    end
+                        if target and minD < 200 then
+                            if SelectedTarget and target.charName == SelectedTarget.charName then
+                                SelectedTarget = nil
+                                print("Target unselected")
+                            else
+                                SelectedTarget = target
+                                print("Target Selected: "..SelectedTarget.charName)
+                            end
+                        end
+            end
+        end
 
 
 
@@ -162,7 +198,7 @@ if myHero.charName ~= "Renekton" then return end
             Wready = (myHero:CanUseSpell(_W) == READY)
             Eready = (myHero:CanUseSpell(_E) == READY)
             Rready = (myHero:CanUseSpell(_R) == READY)
-            target = ts.target
+            Target = ts.target
             end
         
 
@@ -179,52 +215,53 @@ if myHero.charName ~= "Renekton" then return end
                         CastSpell(_W)
                     end
 
-                    if Eready then
-                        CastE(ts.target) 
-                        CastE(ts.target) 
-                        
-                        --CastItem(3074)
-                    end
 
-                    if Qready and GetDistance(ts.target) <= 260 then 
-                        CastSpell(_Q, ts.target)
-                        --myHero:Attack(ts.target)
+                    if Eready and GetDistance(Target) <= 450 then
+                        CastSpell(_E, Target.x, Target.z)
+                        CastSpell(_E, Target.x, Target.z)
+                   end
+
+                    --if Target ~= nil and GetDistance(Target) <= 185 then
+                               -- CastItem(3077)
+                               -- CastItem(3074)
+                   -- end
+
+                    if Qready and GetDistance(Target) <= 260 then 
+                        CastSpell(_Q, Target)
                     end
                     
                 end
             end
 
-            -- Combo WEQE
 
-            function Combo2()
-                if Menu.Key.combo and Wready then
-                    CastSpell(_W, ts.target)
-
-                elseif Menu.Key.combo and Eready then
-                    CastE(ts.target)
-
-                elseif Menu.Key.combo and Qready then
+            -- E Q E
+            function Harass1()
+                checks()
+                if Menu.Key.harass and Eready and GetDistance(Target) <= 450 then
+                    CastSpell(_E, Target.x, Target.z)
                     CastSpell(_Q)
+                    CastSpell(_E, Target.x, Target.z)
 
-                elseif Menu.Key.combo and Eready then
-                    CastE(ts.target)
+                --elseif Menu.Key.harass and Qready then
+                    --CastSpell(_Q)
+
+                --elseif Menu.Key.harass and Eready then
+                    --CastE(Target)
+                end 
+            end
+
+            function flee()
+                checks()
+                if Menu.Key.flee and Eready then
+                    CastSpell(_E, mousePos.x, mousePos.z)
+                    CastSpell(_E, mousePos.x, mousePos.z)
                 end
 
             end
 
-
-            -- E Q E
-            function Harass1()
-                if Menu.Key.harass and Eready then
-                    CastE(ehp)
-
-                elseif Menu.Key.harass and Qready then
-                    CastSpell(_Q)
-
-                elseif Menu.Key.harass and Eready then
-                    CastE(ts.target)
-                end 
-            end
+            --function FWQ()
+             --   if Menu.Key.FWQ and Eready and Qready and 
+           -- end
 
             function Clear()
                 EnemyMinions:update()
@@ -233,7 +270,7 @@ if myHero.charName ~= "Renekton" then return end
                     local qDmg = getDmg("Q", minion, myHero)
                         if Menu.l.useQ and Qready and GetDistance(myHero,minion) <= 225 and qDmg >= minion.health then
                             CastSpell(_Q,minion)
-                        else 
+                        elseif GetDistance (myHero,minion) <= 225 then 
                             CastSpell(_Q, minion)
              
                         end
@@ -270,17 +307,24 @@ if myHero.charName ~= "Renekton" then return end
             function OnDraw()
 
 
+                if myHero.health <= (myHero.maxHealth*Menu.r.autoR/100) then
+                    DrawText("You're life is under"..Menu.r.autoR.."%, Auto R Activated", 18, 100, 100, 0xFFFFFF00)  
+                end
+
                 if (Menu.draw.qd) then
-                -- Q Range
-                DrawCircle(myHero.x, myHero.y, myHero.z, 225, 0x111111)
+                    -- Q Range
+                    DrawCircle(myHero.x, myHero.y, myHero.z, 325, 0x111111)
                 end
 
                 if (Menu.draw.ed) then
-                -- E Range
-                DrawCircle(myHero.x, myHero.y, myHero.z, 450, 0x113211)
+                    -- E Range
+                    DrawCircle(myHero.x, myHero.y, myHero.z, 450, 0x113211)
                 end
- 
-           
+                
+                if (Menu.draw.aad) then
+                    -- AA Range
+                    DrawCircle(myHero.x, myHero.y, myHero.z, 205, 0x113271)
+                end
             end
 
 
