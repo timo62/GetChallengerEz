@@ -2,7 +2,7 @@
     Features:
     - Combo 
     - Harass
-    - Furrymanager
+    - Furrymanager(soon)
     - & more.
 
 ]]
@@ -61,8 +61,29 @@ if myHero.charName ~= "Renekton" then return end
             PrintChat("<font color=\"#AA0000\"><b>[Ez Renekton] </b></font>".."<font color=\"#01cc9c\"><b>By: timo62</b></font>")
             end
 
+            function RequireXA(t)
+                    local tries = 0
+                        if not t then tries = 1 else tries = t + 1 end
+                            if not _G.XawarenessLoaded then
+                                if tries < 5 then
+                                    DelayAction(function()
+                                      print("Trying Again :"..tries)
+                                      RequireXA(tries)
+                                    end,0.25)
+                                else
+                                if FileExist(LIB_PATH.."Xawareness.lua") then
+                                    print("Loaded Xawareness")
+                                    require "Xawareness"
+                                    Xawareness(Menu)
+                                else
+                                    print("Xawareness could not be loaded")
+                                end
+                            end
+                        end
+                end
 
             function OnLoad()
+
                 FindUpdates()
                 -- Minions 
                 EnemyMinions = minionManager(MINION_ENEMY, 600, player, MINION_SORT_HEALTH_ASC)
@@ -77,8 +98,10 @@ if myHero.charName ~= "Renekton" then return end
 
                 SayHello()
 
+                
 
-                -- Menü
+
+                -- MenÃ¼
                 Menu = scriptConfig("| { EZ Renekton } ", "ez renek")
                     Menu:addSubMenu("|->Key Setting", "Key")
                         Menu.Key:addParam("combo", "Combo Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte(" "))
@@ -90,6 +113,9 @@ if myHero.charName ~= "Renekton" then return end
                     Menu:addSubMenu("|->Combo", "c")
                         Menu.c:addParam("x1", "-[    Renekton    ]-", SCRIPT_PARAM_INFO, "Ver 1.0")
                         Menu.c:addParam("comboMode", "Set Combo Mode", SCRIPT_PARAM_LIST, 1, {"E W Q E"--[["W E Q E"]]})
+                        Menu.c:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
+                        Menu.c:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, true)
+                        Menu.c:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, false)
 
                     Menu:addSubMenu("|->Harass", "h")
                         Menu.h:addParam("x1", "-[    Renekton    ]-", SCRIPT_PARAM_INFO, "Ver 1.0")
@@ -120,11 +146,16 @@ if myHero.charName ~= "Renekton" then return end
                         Menu.draw:addParam ("ed", "Draw E Range", SCRIPT_PARAM_ONOFF, true)
                         Menu.draw:addParam ("aad", "Draw AA Range", SCRIPT_PARAM_ONOFF, true)
 
+                    Menu:addSubMenu("|->Target Selector", "TargetSelector")
+                        Menu.TargetSelector:addParam ("drawtext", "Draw Target Select Text", SCRIPT_PARAM_ONOFF, true)
+                        Menu.TargetSelector:addParam ("hitbox", "Target-Selector", SCRIPT_PARAM_LIST, 1, {"Hitbox", "3D Circle"})
+
 
                     ts = TargetSelector(TARGET_LOW_HP_PRIORITY, 650)
                     ts.name = "Renekton"
                     Menu:addTS(ts)
 
+                RequireXA(0)
             end
 
 
@@ -140,7 +171,7 @@ if myHero.charName ~= "Renekton" then return end
                 --  DrawTextA(myHero:getItem(ITEM_1).id)
                 --end
 
-                    if myHero.health <= (myHero.maxHealth*Menu.r.autoR/100) then 
+                    if myHero.health <= (myHero.maxHealth*Menu.r.autoR/100) and Rready then 
                         CastSpell(_R)
                     end
 
@@ -181,10 +212,14 @@ if myHero.charName ~= "Renekton" then return end
                         if target and minD < 200 then
                             if SelectedTarget and target.charName == SelectedTarget.charName then
                                 SelectedTarget = nil
+                                if Menu.TargetSelector.drawtext then
                                 print("Target unselected")
+                                end
                             else
                                 SelectedTarget = target
+                                if Menu.TargetSelector.drawtext then
                                 print("Target Selected: "..SelectedTarget.charName)
+                                end
                             end
                         end
             end
@@ -206,27 +241,29 @@ if myHero.charName ~= "Renekton" then return end
 
             function Combo1()
                 
-                -- Funktionert alles nicht, WEIL if Menu.Key.combo dann führt er das erste aus & die anderen nicht mehr.
+                -- Funktionert alles nicht, WEIL if Menu.Key.combo dann fÃ¼hrt er das erste aus & die anderen nicht mehr.
                 --if ValidTarget(unit) and unit ~= nil and unit.type == myHero.type and Menu.Key.combo then
                 if Menu.Key.combo then
                     checks()
 
-                    if Wready then
-                        CastSpell(_W)
+
+
+                    if Eready and Menu.c.useE and GetDistance(Target) <= 550 then
+                        CastSpell(_E, mousePos.x, mousePos.z)
                     end
 
 
-                    if Eready and GetDistance(Target) <= 450 then
-                        CastSpell(_E, Target.x, Target.z)
-                        CastSpell(_E, Target.x, Target.z)
-                   end
+                    if Wready and Menu.c.useW and GetDistance(Target) <= 205 then
+                        CastSpell(_W, ts.target)
+                    end
+
 
                     --if Target ~= nil and GetDistance(Target) <= 185 then
                                -- CastItem(3077)
                                -- CastItem(3074)
                    -- end
 
-                    if Qready and GetDistance(Target) <= 260 then 
+                    if Qready and Menu.c.useQ and GetDistance(Target) <= 260 then 
                         CastSpell(_Q, Target)
                     end
                     
@@ -240,14 +277,15 @@ if myHero.charName ~= "Renekton" then return end
                 if Menu.Key.harass and Eready and GetDistance(Target) <= 450 then
                     CastSpell(_E, Target.x, Target.z)
                     CastSpell(_Q)
-                    CastSpell(_E, Target.x, Target.z)
+                    CastSpell(_E, Target.x, Target.y)
+                end
 
                 --elseif Menu.Key.harass and Qready then
                     --CastSpell(_Q)
 
                 --elseif Menu.Key.harass and Eready then
                     --CastE(Target)
-                end 
+                
             end
 
             function flee()
@@ -304,29 +342,105 @@ if myHero.charName ~= "Renekton" then return end
                 end
             end
 
-            function OnDraw()
 
+            function DrawCircle3D(x, y, z, radius, width, color, quality)
+                radius = radius or 325
+                quality = quality and 2 * math.pi / quality or 2 * math.pi / (radius / 5)
+                local points = {}
+                    for theta = 0, 2 * math.pi + quality, quality do
+                        local c = WorldToScreen(D3DXVECTOR3(x + radius * math.cos(theta), y, z - radius * math.sin(theta)))
+                        points[#points + 1] = D3DXVECTOR2(c.x, c.y)
+                    end
+                DrawLines2(points, width or 1, color or 2294967295)
+            end
 
-                if myHero.health <= (myHero.maxHealth*Menu.r.autoR/100) then
-                    DrawText("You're life is under"..Menu.r.autoR.."%, Auto R Activated", 18, 100, 100, 0xFFFFFF00)  
-                end
+            function DrawCircle3D2(x, y, z, radius, width, color, quality)
+                radius = radius or 450
+                quality = quality and 2 * math.pi / quality or 2 * math.pi / (radius / 5)
+                local points = {}
+                    for theta = 0, 2 * math.pi + quality, quality do
+                        local c = WorldToScreen(D3DXVECTOR3(x + radius * math.cos(theta), y, z - radius * math.sin(theta)))
+                        points[#points + 1] = D3DXVECTOR2(c.x, c.y)
+                    end
+                DrawLines2(points, width or 1, color or 4294967295)
+            end
 
-                if (Menu.draw.qd) then
-                    -- Q Range
-                    DrawCircle(myHero.x, myHero.y, myHero.z, 325, 0x111111)
-                end
+            function DrawCircle3D3(x, y, z, radius, width, color, quality)
+                radius = radius or 205
+                quality = quality and 2 * math.pi / quality or 2 * math.pi / (radius / 5)
+                local points = {}
+                    for theta = 0, 2 * math.pi + quality, quality do
+                        local c = WorldToScreen(D3DXVECTOR3(x + radius * math.cos(theta), y, z - radius * math.sin(theta)))
+                        points[#points + 1] = D3DXVECTOR2(c.x, c.y)
+                    end
+                DrawLines2(points, width or 1, color or 6294967295)
+            end
 
-                if (Menu.draw.ed) then
-                    -- E Range
-                    DrawCircle(myHero.x, myHero.y, myHero.z, 450, 0x113211)
-                end
-                
-                if (Menu.draw.aad) then
-                    -- AA Range
-                    DrawCircle(myHero.x, myHero.y, myHero.z, 205, 0x113271)
+            function DrawCircle3D4(x, y, z, radius, width, color, quality)
+                radius = radius or 100
+                quality = quality and 2 * math.pi / quality or 2 * math.pi / (radius / 5)
+                local points = {}
+                    for theta = 0, 2 * math.pi + quality, quality do
+                        local c = WorldToScreen(D3DXVECTOR3(x + radius * math.cos(theta), y, z - radius * math.sin(theta)))
+                        points[#points + 1] = D3DXVECTOR2(c.x, c.y)
+                    end
+                DrawLines2(points, width or 1, color or 8294967295)
+            end
+
+            function DrawHitBox(object, linesize, linecolor)
+                if object and object.valid and object.minBBox then
+                    DrawLine3D(object.minBBox.x, object.minBBox.y, object.minBBox.z, object.minBBox.x, object.minBBox.y, object.maxBBox.z, linesize, linecolor)
+                    DrawLine3D(object.minBBox.x, object.minBBox.y, object.maxBBox.z, object.maxBBox.x, object.minBBox.y, object.maxBBox.z, linesize, linecolor)
+                    DrawLine3D(object.maxBBox.x, object.minBBox.y, object.maxBBox.z, object.maxBBox.x, object.minBBox.y, object.minBBox.z, linesize, linecolor)
+                    DrawLine3D(object.maxBBox.x, object.minBBox.y, object.minBBox.z, object.minBBox.x, object.minBBox.y, object.minBBox.z, linesize, linecolor)
+                    DrawLine3D(object.minBBox.x, object.minBBox.y, object.minBBox.z, object.minBBox.x, object.maxBBox.y, object.minBBox.z, linesize, linecolor)
+                    DrawLine3D(object.minBBox.x, object.minBBox.y, object.maxBBox.z, object.minBBox.x, object.maxBBox.y, object.maxBBox.z, linesize, linecolor)
+                    DrawLine3D(object.maxBBox.x, object.minBBox.y, object.maxBBox.z, object.maxBBox.x, object.maxBBox.y, object.maxBBox.z, linesize, linecolor)
+                    DrawLine3D(object.maxBBox.x, object.minBBox.y, object.minBBox.z, object.maxBBox.x, object.maxBBox.y, object.minBBox.z, linesize, linecolor)
+                    DrawLine3D(object.minBBox.x, object.maxBBox.y, object.minBBox.z, object.minBBox.x, object.maxBBox.y, object.maxBBox.z, linesize, linecolor)
+                    DrawLine3D(object.minBBox.x, object.maxBBox.y, object.maxBBox.z, object.maxBBox.x, object.maxBBox.y, object.maxBBox.z, linesize, linecolor)
+                    DrawLine3D(object.maxBBox.x, object.maxBBox.y, object.maxBBox.z, object.maxBBox.x, object.maxBBox.y, object.minBBox.z, linesize, linecolor)
+                    DrawLine3D(object.maxBBox.x, object.maxBBox.y, object.minBBox.z, object.minBBox.x, object.maxBBox.y, object.minBBox.z, linesize, linecolor)
                 end
             end
 
 
 
+            function OnDraw()
 
+
+                if myHero.health <= (myHero.maxHealth*Menu.r.autoR/100) and Rready then
+                    DrawText("You're life is under"..Menu.r.autoR.."%, Auto R Activated", 18, 100, 100, 0xFFFFFF00)  
+                end
+
+
+
+                if (Menu.draw.qd) then
+                    -- Q Range
+                    DrawCircle3D(myHero.x, myHero.y, myHero.z)
+                end
+
+
+
+                if (Menu.draw.ed) then
+                    -- E Range
+                    DrawCircle3D2(myHero.x, myHero.y, myHero.z)
+                end
+
+
+                
+                if (Menu.draw.aad) then
+                    -- AA Range
+                    DrawCircle3D3(myHero.x, myHero.y, myHero.z)
+                end
+
+
+                if SelectedTarget ~= nil and Menu.TargetSelector.hitbox == 1 then 
+                    DrawHitBox(SelectedTarget)
+
+                end
+
+                if SelectedTarget ~= nil and Menu.TargetSelector.hitbox == 2 then
+                    DrawCircle3D4(SelectedTarget.x, SelectedTarget.y, SelectedTarget.z)
+                end
+            end
