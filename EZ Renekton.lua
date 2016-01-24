@@ -62,7 +62,13 @@ if myHero.charName ~= "Renekton" then return end
             end
 
             function OnLoad()
+                -- Finde Updates
                 FindUpdates()
+
+                -- Orbwalks
+                if not G.Reborn_Loaded or not G.MMA_IsLoaded then 
+                    require 'SxOrbWalk' 
+                end
                 -- Minions 
                 EnemyMinions = minionManager(MINION_ENEMY, 600, player, MINION_SORT_HEALTH_ASC)
                 allyMinions = minionManager(MINION_ALLY, 300, player, MINION_SORT_HEALTH_DES)
@@ -132,6 +138,18 @@ if myHero.charName ~= "Renekton" then return end
                 --  DrawTextA(myHero:getItem(ITEM_1).id)
                 --end
 
+                print(SelectedTarget)
+
+                    if SelectedTarget ~= nil then
+                        if _G.Reborn_Loaded then
+                            _G.AutoCarry.MyHero:Attack(SelectedTarget)
+                        elseif _G.MMA_IsLoaded then
+                            _G.MMA_ForceTarget(SelectedTarget)
+                        elseif not G.Reborn_Loaded or not G.MMA_IsLoaded then
+                            SxOrb:ForceTarget(SelectedTarget)
+                        end
+                    end
+
                     if myHero.health <= (myHero.maxHealth*Menu.r.autoR/100) then 
                         CastSpell(_R)
                     end
@@ -162,7 +180,6 @@ if myHero.charName ~= "Renekton" then return end
             Wready = (myHero:CanUseSpell(_W) == READY)
             Eready = (myHero:CanUseSpell(_E) == READY)
             Rready = (myHero:CanUseSpell(_R) == READY)
-            target = ts.target
             end
         
 
@@ -180,15 +197,13 @@ if myHero.charName ~= "Renekton" then return end
                     end
 
                     if Eready then
-                        CastE(ts.target) 
-                        CastE(ts.target) 
-                        
+                        --CastE(SelectedTarget) - Changed this to \/
+                        CastSpell(_E, SelectedTarget.x, SelectedTarget.z)
                         --CastItem(3074)
                     end
 
                     if Qready and GetDistance(ts.target) <= 260 then 
-                        CastSpell(_Q, ts.target)
-                        --myHero:Attack(ts.target)
+                        CastSpell(_Q) -- Removed Target 
                     end
                     
                 end
@@ -282,7 +297,3 @@ if myHero.charName ~= "Renekton" then return end
  
            
             end
-
-
-
-
