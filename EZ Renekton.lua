@@ -43,6 +43,41 @@ end
 
 -- Updater
 
+--Orbwalkers Start
+function OrbWalkers()
+    if _G.Reborn_Initialised then
+    elseif _G.Reborn_Loaded then
+    DelayAction(function()  
+    SAC = true
+    SX = false  
+    Menu:addSubMenu("OrbWalk", "OrbWalkMenu")
+    Menu.OrbWalkMenu:addParam("Info", "Sac Detected", SCRIPT_PARAM_INFO, " ")
+    end, 16)
+    else
+    if FileExist(LIB_PATH .. "/SxOrbWalk.lua") then
+    require("SxOrbWalk")
+    Menu:addSubMenu("OrbWalk", "OrbWalkMenu")
+    SxOrb:LoadToMenu(Menu.OrbWalkMenu)
+    SAC = false
+    SX = true
+    else
+    local ToUpdate = {}
+    ToUpdate.Version = 1
+    ToUpdate.UseHttps = true
+    ToUpdate.Host = "raw.githubusercontent.com"
+    ToUpdate.VersionPath = "/Superx321/BoL/master/common/SxOrbWalk.Version"
+    ToUpdate.ScriptPath =  "/Superx321/BoL/master/common/SxOrbWalk.lua"
+    ToUpdate.SavePath = LIB_PATH.."/SxOrbWalk.lua"
+    ToUpdate.CallbackUpdate = function(NewVersion,OldVersion) print("<font color=\"#FF794C\"><b>SxOrbWalk: </b></font> <font color=\"#FFDFBF\">Updated to "..NewVersion..". </b></font>") end
+    ToUpdate.CallbackNoUpdate = function(OldVersion) print("<font color=\"#FF794C\"><b>SxOrbWalk: </b></font> <font color=\"#FFDFBF\">No Updates Found</b></font>") end
+    ToUpdate.CallbackNewVersion = function(NewVersion) print("<font color=\"#FF794C\"><b>SxOrbWalk: </b></font> <font color=\"#FFDFBF\">New Version found ("..NewVersion.."). Please wait until its downloaded</b></font>") end
+    ToUpdate.CallbackError = function(NewVersion) print("<font color=\"#FF794C\"><b>SxOrbWalk: </b></font> <font color=\"#FFDFBF\">Error while Downloading. Please try again.</b></font>") end
+    ScriptUpdate(ToUpdate.Version,ToUpdate.UseHttps, ToUpdate.Host, ToUpdate.VersionPath, ToUpdate.ScriptPath, ToUpdate.SavePath, ToUpdate.CallbackUpdate,ToUpdate.CallbackNoUpdate, ToUpdate.CallbackNewVersion,ToUpdate.CallbackError)
+    end
+    end
+end
+-- Orbwalkers End
+
 if myHero.charName ~= "Renekton" then return end
     local ts
         if not _G.UPLloaded then
@@ -61,26 +96,6 @@ if myHero.charName ~= "Renekton" then return end
             PrintChat("<font color=\"#AA0000\"><b>[Ez Renekton] </b></font>".."<font color=\"#01cc9c\"><b>By: timo62</b></font>")
             end
 
-            function RequireXA(t)
-                    local tries = 0
-                        if not t then tries = 1 else tries = t + 1 end
-                            if not _G.XawarenessLoaded then
-                                if tries < 5 then
-                                    DelayAction(function()
-                                      print("Trying Again :"..tries)
-                                      RequireXA(tries)
-                                    end,0.25)
-                                else
-                                if FileExist(LIB_PATH.."Xawareness.lua") then
-                                    print("Loaded Xawareness")
-                                    require "Xawareness"
-                                    Xawareness(Menu)
-                                else
-                                    print("Xawareness could not be loaded")
-                                end
-                            end
-                        end
-                end
 
             function OnLoad()
 
@@ -101,7 +116,7 @@ if myHero.charName ~= "Renekton" then return end
                 
 
 
-                -- MenÃ¼
+                -- Menü
                 Menu = scriptConfig("| { EZ Renekton } ", "ez renek")
                     Menu:addSubMenu("|->Key Setting", "Key")
                         Menu.Key:addParam("combo", "Combo Key", SCRIPT_PARAM_ONKEYDOWN, false, string.byte(" "))
@@ -154,12 +169,12 @@ if myHero.charName ~= "Renekton" then return end
                     ts = TargetSelector(TARGET_LOW_HP_PRIORITY, 650)
                     ts.name = "Renekton"
                     Menu:addTS(ts)
-
-                RequireXA(0)
             end
 
 
             function OnTick()
+
+
 
 
                 if SelectedTarget ~= nil then 
@@ -247,26 +262,30 @@ if myHero.charName ~= "Renekton" then return end
                     checks()
 
 
-
-                    if Eready and Menu.c.useE and GetDistance(Target) <= 550 then
-                        CastSpell(_E, mousePos.x, mousePos.z)
-                    end
-
-
-                    if Wready and Menu.c.useW and GetDistance(Target) <= 205 then
+                    if Menu.c.useW and GetDistance(Target) <= 205 then
                         CastSpell(_W, ts.target)
                     end
 
+                    if Menu.c.useE and GetDistance(Target) <= 550 then
+                        CastSpell(_E, mousePos.x, mousePos.z)
+                    end
 
-                    --if Target ~= nil and GetDistance(Target) <= 185 then
-                               -- CastItem(3077)
-                               -- CastItem(3074)
-                   -- end
-
-                    if Qready and Menu.c.useQ and GetDistance(Target) <= 260 then 
-                        CastSpell(_Q, Target)
+                    if Menu.c.useQ then 
+                        CastQ()
                     end
                     
+                end
+            end
+
+            function CastQ()
+                if GetDistance(Target) <= 260 then
+                    CastSpell(_Q, Target)
+                end
+            end
+
+            function CastE()
+                if GetDistance(Target) <= 550 then
+                    CastSpell(_E, Target.x, Target.z)
                 end
             end
 
@@ -290,6 +309,7 @@ if myHero.charName ~= "Renekton" then return end
 
             function flee()
                 checks()
+                myHero:MoveTo(mousePos.x, mousePos.z)
                 if Menu.Key.flee and Eready then
                     CastSpell(_E, mousePos.x, mousePos.z)
                     CastSpell(_E, mousePos.x, mousePos.z)
@@ -332,10 +352,10 @@ if myHero.charName ~= "Renekton" then return end
         end
 
 
-            function CastE(target, minion)
+            function CastE1(target, minion)
                 if not target and minion then return end
-                CastPosition, HitChance, HeroPosition = UPL:Predict(_E, myHero, target, minion)
-                    if Eready and HitChance >= Menu.pred.ehs then
+                CastPosition, HitChance, HeroPosition = UPL:Predict(_E, myHero, Target, minion)
+                    if Eready and HitChance >= Menu.pred.ehs and spell.name == "RenektonSliceAndDice" then
                         DelayAction(function ()
                             CastSpell(_E, CastPosition.x,CastPosition.z)
                     end,0.2)
