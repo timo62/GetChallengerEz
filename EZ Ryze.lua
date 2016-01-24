@@ -10,7 +10,7 @@ local PassiveStacks = 0
 local PassiveCharged = false
 
 local LocalVersion = "0.4"
-local AutoUpdate = true
+local AutoUpdate = false
 
 local serveradress = "raw.githubusercontent.com"
 local scriptadress = "/timo62/GetChallengerEz/master"
