@@ -9,7 +9,7 @@
 
 --Updater
 local LocalVersion = "0.2"
-local AutoUpdate = true
+local AutoUpdate = false
 
 local serveradress = "raw.githubusercontent.com"
 local scriptadress = "/timo62/GetChallengerEz/master"
