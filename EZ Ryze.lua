@@ -9,15 +9,15 @@
 local PassiveStacks = 0
 local PassiveCharged = false
 
-local LocalVersion = "0.4"
-local AutoUpdate = false
+local LocalVersion = "0.5"
+local AutoUpdate = true
 
 local serveradress = "raw.githubusercontent.com"
 local scriptadress = "/timo62/GetChallengerEz/master"
 local scriptname = "EZ Ryze"
 local scriptmsg = "<font color=\"#AA0000\"><b>[Ez Ryze]</b></font>"
     function FindUpdates()
-    if not AutoUpdate then return end
+    --if not AutoUpdate then return end
     local ServerVersionDATA = GetWebResult(serveradress , scriptadress.."/"..scriptname..".version")
     if ServerVersionDATA then
         local ServerVersion = tonumber(ServerVersionDATA)
@@ -62,29 +62,8 @@ local ts
             PrintChat("<font color=\"#AA0000\"><b>[Ez Ryze] </b></font>".."<font color=\"#01cc9c\"><b>By: timo62</b></font>")
         end
 
-        function RequireXA(t)
-                    local tries = 0
-                        if not t then tries = 1 else tries = t + 1 end
-                            if not _G.XawarenessLoaded then
-                                if tries < 5 then
-                                    DelayAction(function()
-                                      print("Trying Again :"..tries)
-                                      RequireXA(tries)
-                                    end,0.25)
-                                else
-                                if FileExist(LIB_PATH.."Xawareness.lua") then
-                                    print("Loaded Xawareness")
-                                    require "Xawareness"
-                                    Xawareness(Menu)
-                                else
-                                    print("Xawareness could not be loaded")
-                                end
-                            end
-                        end
-                end
-
         function OnLoad()
-            FindUpdates()
+            --FindUpdates()
             -- Minions 
             EnemyMinions = minionManager(MINION_ENEMY, 600, player, MINION_SORT_HEALTH_ASC)
             allyMinions = minionManager(MINION_ALLY, 300, player, MINION_SORT_HEALTH_DES)
@@ -142,6 +121,7 @@ local ts
                     Menu.draw:addParam("qd", "Draw Q Range", SCRIPT_PARAM_ONOFF, true)
                     Menu.draw:addParam("wd", "Draw W Range", SCRIPT_PARAM_ONOFF, true)
                     Menu.draw:addParam("aad", "Draw AA Range", SCRIPT_PARAM_ONOFF, true) 
+                    Menu.draw:addParam("CDTracker", "CD Tracker", SCRIPT_PARAM_ONOFF, true)
 
                 Menu:addSubMenu("|->Target Selector", "TargetSelector")
                         Menu.TargetSelector:addParam ("drawtext", "Draw Target Select Text", SCRIPT_PARAM_ONOFF, true)
@@ -152,8 +132,6 @@ local ts
                 ts = TargetSelector(TARGET_LOW_HP_PRIORITY,650)
                 ts.name = "Ryze"
                 Menu:addTS(ts)
-
-                RequireXA(0)
         end
 
         function OnTick()
@@ -184,6 +162,61 @@ local ts
                 end
         end
 
+function GetHPBarPos(enemy)
+    enemy.barData = {PercentageOffset = {x = -0.05, y = 0}}--GetEnemyBarData()
+    local barPos = GetUnitHPBarPos(enemy)
+    local barPosOffset = GetUnitHPBarOffset(enemy)
+    local barOffset = { x = enemy.barData.PercentageOffset.x, y = enemy.barData.PercentageOffset.y }
+    local barPosPercentageOffset = { x = enemy.barData.PercentageOffset.x, y = enemy.barData.PercentageOffset.y }
+    local BarPosOffsetX = 171
+    local BarPosOffsetY = 46
+    local CorrectionY = 39
+    local StartHpPos = 31
+
+    barPos.x = math.floor(barPos.x + (barPosOffset.x - 0.5 + barPosPercentageOffset.x) * BarPosOffsetX + StartHpPos)
+    barPos.y = math.floor(barPos.y + (barPosOffset.y - 0.5 + barPosPercentageOffset.y) * BarPosOffsetY + CorrectionY)
+
+    local StartPos = Vector(barPos.x , barPos.y, 0)
+    local EndPos = Vector(barPos.x + 108 , barPos.y , 0)
+    return Vector(StartPos.x, StartPos.y, 0), Vector(EndPos.x, EndPos.y, 0)
+end
+
+function DrawCD()
+    for i = 1, heroManager.iCount, 1 do
+        local champ = heroManager:getHero(i)
+        if champ ~= nil and champ ~= myHero and champ.visible and champ.dead == false then
+            local barPos = GetHPBarPos(champ)
+            if OnScreen(barPos.x, barPos.y) then
+                local cd = {}
+                cd[0] = math.ceil(champ:GetSpellData(SPELL_1).currentCd)
+                cd[1] = math.ceil(champ:GetSpellData(SPELL_2).currentCd)
+                cd[2] = math.ceil(champ:GetSpellData(SPELL_3).currentCd)
+                cd[3] = math.ceil(champ:GetSpellData(SPELL_4).currentCd)
+            
+                local spellColor = {}
+                spellColor[0] = 0xBBFFD700;
+                spellColor[1] = 0xBBFFD700;
+                spellColor[2] = 0xBBFFD700;
+                spellColor[3] = 0xBBFFD700;
+                                       
+                if cd[0] == nil or cd[0] == 0 then cd[0] = "Q" spellColor[0] = 0xBBFFFFFF end
+                if cd[1] == nil or cd[1] == 0 then cd[1] = "W" spellColor[1] = 0xBBFFFFFF end
+                if cd[2] == nil or cd[2] == 0 then cd[2] = "E" spellColor[2] = 0xBBFFFFFF end
+                if cd[3] == nil or cd[3] == 0 then cd[3] = "R" spellColor[3] = 0xBBFFFFFF end
+            
+                if champ:GetSpellData(SPELL_1).level == 0 then spellColor[0] = 0xBBFF0000 end
+                if champ:GetSpellData(SPELL_2).level == 0 then spellColor[1] = 0xBBFF0000 end
+                if champ:GetSpellData(SPELL_3).level == 0 then spellColor[2] = 0xBBFF0000 end
+                if champ:GetSpellData(SPELL_4).level == 0 then spellColor[3] = 0xBBFF0000 end
+                DrawRectangle(barPos.x-6, barPos.y-40, 80, 15, 0xBB202020)
+                DrawText("[" .. cd[0] .. "]" ,12, barPos.x-5+2, barPos.y-40, spellColor[0])
+                DrawText("[" .. cd[1] .. "]", 12, barPos.x+15+2, barPos.y-40, spellColor[1])
+                DrawText("[" .. cd[2] .. "]", 12, barPos.x+35+2, barPos.y-40, spellColor[2])
+                DrawText("[" .. cd[3] .. "]", 12, barPos.x+54+2, barPos.y-40, spellColor[3])
+            end
+        end
+    end
+end
 
 
         function OnWndMsg(msg, key)
@@ -408,17 +441,6 @@ local ts
                 DrawLines2(points, width or 1, color or 4294967295)
             end
 
-            function DrawCircle3D3(x, y, z, radius, width, color, quality)
-                radius = radius or 205
-                quality = quality and 2 * math.pi / quality or 2 * math.pi / (radius / 5)
-                local points = {}
-                    for theta = 0, 2 * math.pi + quality, quality do
-                        local c = WorldToScreen(D3DXVECTOR3(x + radius * math.cos(theta), y, z - radius * math.sin(theta)))
-                        points[#points + 1] = D3DXVECTOR2(c.x, c.y)
-                    end
-                DrawLines2(points, width or 1, color or 6294967295)
-            end
-
             function DrawCircle3D4(x, y, z, radius, width, color, quality)
                 radius = radius or 100
                 quality = quality and 2 * math.pi / quality or 2 * math.pi / (radius / 5)
@@ -449,6 +471,10 @@ local ts
 
 
         function OnDraw()
+
+                if Menu.draw.CDTracker then DrawCD() end
+
+
                 if (Menu.draw.qd) then
                 -- Q Range
                 DrawCircle3D(myHero.x, myHero.y, myHero.z)
@@ -456,12 +482,7 @@ local ts
 
                 if (Menu.draw.wd) then
                 -- W Range
-                DrawCircle3D2(myHero.x, myHero.y, myHero.z)
-                end
-                
-
-                if (Menu.draw.aad) then
-                    DrawCircle3D3(myHero.x, myHero.y, myHero.z)
+                    DrawCircle3D2(myHero.x, myHero.y, myHero.z)
                 end
 
                 local pos = WorldToScreen(D3DXVECTOR3(myHero.x, myHero.y, myHero.z))
