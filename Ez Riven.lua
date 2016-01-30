@@ -1,4 +1,4 @@
-local LocalVersion = "0.5"
+local LocalVersion = "0.6"
 local AutoUpdate = true
 
 if myHero.charName ~= "Riven" then return end
