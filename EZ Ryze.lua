@@ -9,7 +9,7 @@
 local PassiveStacks = 0
 local PassiveCharged = false
 
-local LocalVersion = "0.5"
+local LocalVersion = "0.6"
 local AutoUpdate = true
 
 local serveradress = "raw.githubusercontent.com"
@@ -67,6 +67,7 @@ local ts
             -- Minions 
             EnemyMinions = minionManager(MINION_ENEMY, 600, player, MINION_SORT_HEALTH_ASC)
             allyMinions = minionManager(MINION_ALLY, 300, player, MINION_SORT_HEALTH_DES)
+            jungleMinions = minionManager(MINION_JUNGLE, 700, myHero, MINION_SORT_MAXHEALTH_DEC)
 
             spells = {
             Q = { speed = 1700, delay = 0.25, range = 900, width = 50, collision = false, aoe = false, type = "linear" },
@@ -85,7 +86,7 @@ local ts
                     Menu.Key:addParam("Toggle", "Auto Skill Farm", SCRIPT_PARAM_ONKEYTOGGLE, false, string.byte("T"))
 
                 Menu:addSubMenu("|->Combo", "c")
-                    Menu.c:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.5")
+                    Menu.c:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, LocalVersion)
                     -- Create conditionals in your menu/keybinds or in certain situations
                     Menu.c:addParam("comboMode", "Set Combo Mode", SCRIPT_PARAM_LIST, 1, {"R W Q E", "W Q E Q"}) -- Combo list default set at 1 (Q W E R)
                     Menu.c:addParam("autoR", "Use R after x Stacks", SCRIPT_PARAM_SLICE, 2, 0, 4)
@@ -96,21 +97,21 @@ local ts
                     Menu.h:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, true)
                     Menu.h:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)]]
 
-                Menu:addSubMenu("|->Lane Clear", "l")
-                    Menu.l:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.5")
+                Menu:addSubMenu("|->Clear", "l")
+                    Menu.l:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, LocalVersion)
                     Menu.l:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
                     Menu.l:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, true)
                     Menu.l:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)
                     Menu.l:addParam("useR", "Use R", SCRIPT_PARAM_ONOFF, false)
 
                 Menu:addSubMenu("|->Last Hit", "lh")
-                    Menu.lh:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.5")
+                    Menu.lh:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, LocalVersion)
                     Menu.lh:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
                     Menu.lh:addParam("useW", "Use W", SCRIPT_PARAM_ONOFF, false)
                     Menu.lh:addParam("useE", "Use E", SCRIPT_PARAM_ONOFF, true)
 
                 Menu:addSubMenu("|->Auto Skill Farm", "tg")
-                    Menu.tg:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.5")
+                    Menu.tg:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, LocalVersion)
                     Menu.tg:addParam("useQ", "Use Q", SCRIPT_PARAM_ONOFF, true)
 
                 Menu:addSubMenu("|->Prediction", "pred")
@@ -135,6 +136,7 @@ local ts
         end
 
         function OnTick()
+
 
 
 
@@ -327,7 +329,7 @@ end
 
         
         --LaneClear
-        function Clear()
+       --[[ function Clear()
             if  Menu.l.useE  then
                 EnemyMinions:update()
                 for i, minion in pairs(EnemyMinions.objects) do
@@ -359,8 +361,27 @@ end
                         end
                 end
             end
-        end
+        end]]
 
+
+        function Clear()
+            EnemyMinions:update()
+            jungleMinions:update()
+                for _, minion in pairs(EnemyMinions.objects) do
+                    if Menu.l.useR then CastSpell(_R) end
+                    if Menu.l.useW then CastSpell(_W, minion) end
+                    if Menu.l.useE then CastSpell(_E, minion) end
+                    if Menu.l.useQ then CastQ(minion) end
+                    
+                end
+                for _, minion in pairs(jungleMinions.objects) do
+                    if Menu.l.useR then CastSpell(_R) end
+                    if Menu.l.useW then CastSpell(_W, minion) end
+                    if Menu.l.useE then CastSpell(_E, minion) end
+                    if Menu.l.useQ then CastQ(minion) end 
+                    
+                end
+        end
   
  
         --Last Hit
@@ -377,8 +398,8 @@ end
                     EnemyMinions:update()
                     for i, minion in pairs (EnemyMinions.objects) do
                         local wDmg = getDmg("W", minion, myHero)
-                            if Menu.lh.useW and Wready and wDmg >= minion.health then
-                                CastSpell(_W,minion)
+                            if Menu.lh.useW and Wready and wDmg >= (minion.health) then
+                                CastSpell(_W, minion)
                             end
                     end
             elseif  Menu.lh.useE then
@@ -386,7 +407,7 @@ end
                     for i, minion in pairs(EnemyMinions.objects) do
                         local eDmg = getDmg("E", minion, myHero)
                             if Menu.lh.useE and Eready and eDmg >= (minion.health+20) then
-                                CastSpell(_E,minion)
+                                CastSpell(_E, minion)
                             end
                     end
             end
