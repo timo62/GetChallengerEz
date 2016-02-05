@@ -1,15 +1,13 @@
 --[[
-EzSprites needed for this Script.
-Credits: timo62 & help from HiranN
-
+Credits: timo62 & help from HiranN.
 ]]
 
 IgnoreList = {
-["Udyr"] = true, ["TwistedFate"] = true,
+["Udyr"] = true,
 }
 
 function OnLoad()
-	Version = 0.1
+	Version = 0.2
 	Menu = scriptConfig ("HUD - "..myHero.charName, "HUD")
     Menu:addSubMenu("HUD Settings", "HUDSettings")
         Menu.HUDSettings:addParam("useHUD", "Use HUD", SCRIPT_PARAM_ONOFF, true)
@@ -47,10 +45,14 @@ function CheckSprites()
   	DownloadFile("http://raw.githubusercontent.com/timo62/GetChallengerEz/master/EzSprites/"..myHero.charName..".png", SPRITE_PATH.."EzSprites/"..myHero.charName..".png", function ()
   	SendMsg("Sprites Downloaded, press 2x F9")
   	end)
+	end	
 	end
-	else
-	List = "UdyrUrf", "UdyrPhoenix", "UdyrBear", "UdyrTiger", "EzRiven", "HrTwistedFate", "UdyrTurtle"
-	if not FileExist(SPRITE_PATH.."EzSprites/"..List..".png") then
+	List = {
+	["Riven"] = "EzRiven",
+	["Udyr"] = "UdyrUrf", "UdyrPhoenix", "UdyrBear", "UdyrTiger",
+	["TwistedFate"] = "HrTwistedFate",
+	}
+	if not FileExist(SPRITE_PATH.."EzSprites/"..List[myHero.charName]..".png") then
 	NotSprites = true
 	SendMsg("Downloading Sprites")
   	DownloadFile("http://raw.githubusercontent.com/timo62/GetChallengerEz/master/EzSprites/UdyrUrf.png", SPRITE_PATH.."EzSprites/UdyrUrf.png",function()end)
@@ -63,10 +65,11 @@ function CheckSprites()
   	SendMsg("Sprites Downloaded, press 2x F9")
   	end)
 	end
-	end 
 if NotSprites then return end
+if not IgnoreList[myHero.charName] and myHero.charName ~= "Riven" then
 MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png")  
-if myHero.charName == "Riven" then
+elseif myHero.charName == "Riven" then
+MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png") 
 EzRiven = GetSprite("\\EzSprites\\EzRiven.png")
 elseif myHero.charName == "Udyr" then
 UdyrUrf = GetSprite("\\EzSprites\\UdyrUrf.png")
@@ -75,6 +78,7 @@ UdyrPhoenix = GetSprite("\\EzSprites\\UdyrPhoenix.png")
 UdyrTiger = GetSprite("\\EzSprites\\UdyrTiger.png")
 UdyrBear = GetSprite("\\EzSprites\\UdyrBear.png")
 elseif myHero.charName == "TwistedFate" then
+MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png") 
 HrTwistedFate = GetSprite("\\EzSprites\\HrTwistedFate.png")
 end
 end
