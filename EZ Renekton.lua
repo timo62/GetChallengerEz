@@ -98,11 +98,7 @@ if myHero.charName ~= "Renekton" then return end
 
 
             function OnLoad()
-<<<<<<< HEAD
                 -- Finde Updates
-=======
-
->>>>>>> origin/master
                 FindUpdates()
 
                 -- Orbwalks
@@ -195,7 +191,6 @@ if myHero.charName ~= "Renekton" then return end
                 --  DrawTextA(myHero:getItem(ITEM_1).id)
                 --end
 
-<<<<<<< HEAD
                 print(SelectedTarget)
 
                     if SelectedTarget ~= nil then
@@ -209,9 +204,7 @@ if myHero.charName ~= "Renekton" then return end
                     end
 
                     if myHero.health <= (myHero.maxHealth*Menu.r.autoR/100) then 
-=======
                     if myHero.health <= (myHero.maxHealth*Menu.r.autoR/100) and Rready then 
->>>>>>> origin/master
                         CastSpell(_R)
                     end
 
@@ -273,10 +266,7 @@ if myHero.charName ~= "Renekton" then return end
             Wready = (myHero:CanUseSpell(_W) == READY)
             Eready = (myHero:CanUseSpell(_E) == READY)
             Rready = (myHero:CanUseSpell(_R) == READY)
-<<<<<<< HEAD
-=======
             Target = ts.target
->>>>>>> origin/master
             end
         
 
@@ -293,9 +283,8 @@ if myHero.charName ~= "Renekton" then return end
                     if Menu.c.useW and GetDistance(Target) <= 205 then
                         CastSpell(_W, ts.target)
                     end
-
-<<<<<<< HEAD
-                    if Eready then
+                    
+                   if Eready then
                         --CastE(SelectedTarget) - Changed this to \/
                         CastSpell(_E, SelectedTarget.x, SelectedTarget.z)
                         --CastItem(3074)
@@ -303,14 +292,12 @@ if myHero.charName ~= "Renekton" then return end
 
                     if Qready and GetDistance(ts.target) <= 260 then 
                         CastSpell(_Q) -- Removed Target 
-=======
                     if Menu.c.useE and GetDistance(Target) <= 550 then
                         CastSpell(_E, mousePos.x, mousePos.z)
                     end
 
                     if Menu.c.useQ then 
                         CastQ()
->>>>>>> origin/master
                     end
                     
                 end
@@ -485,11 +472,7 @@ if myHero.charName ~= "Renekton" then return end
                     -- E Range
                     DrawCircle3D2(myHero.x, myHero.y, myHero.z)
                 end
-<<<<<<< HEAD
- 
-           
             end
-=======
 
 
                 
@@ -508,4 +491,3 @@ if myHero.charName ~= "Renekton" then return end
                     DrawCircle3D4(SelectedTarget.x, SelectedTarget.y, SelectedTarget.z)
                 end
             end
->>>>>>> origin/master
