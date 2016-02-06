@@ -2,13 +2,9 @@
 Credits: timo62 & help from HiranN.
 ]]
 
-IgnoreList = {
-["Udyr"] = true,
-}
-
 function OnLoad()
-	Version = 0.2
-	Menu = scriptConfig ("HUD - "..myHero.charName, "HUD")
+	Version = 0.3
+	Menu = scriptConfig ("HUD - "..myHero.charName, "EzHud")
     Menu:addSubMenu("HUD Settings", "HUDSettings")
         Menu.HUDSettings:addParam("useHUD", "Use HUD", SCRIPT_PARAM_ONOFF, true)
         Menu.HUDSettings:addParam("HUDx", "HUD x Position", SCRIPT_PARAM_SLICE, 20, 0.1, 255, 0.1)
@@ -16,25 +12,49 @@ function OnLoad()
 
     Menu:addSubMenu("HUD's", "HUDs")
     	if myHero.charName == "Riven" then 
-    	Menu.HUDs:addParam("HUDlist", "Choose Hud", SCRIPT_PARAM_LIST, 1, {" "..myHero.charName, "Ez Riven"})
+    	Menu.HUDs:addParam("HUDlist", "Choose Hud", SCRIPT_PARAM_LIST, 1, {myHero.charName, "Ez Riven"})
     	elseif myHero.charName == "TwistedFate" then
-    	Menu.HUDs:addParam("HUDlist", "Choose Hud", SCRIPT_PARAM_LIST, 1, {" "..myHero.charName, "Hr TwistedFate"})
+    	Menu.HUDs:addParam("HUDlist", "Choose Hud", SCRIPT_PARAM_LIST, 1, {myHero.charName, "Hr TwistedFate"})
     	else
-    	Menu.HUDs:addParam("HUDlist", "Choose Hud", SCRIPT_PARAM_LIST, 1, {" "..myHero.charName})
+    	Menu.HUDs:addParam("HUDlist", "Choose Hud", SCRIPT_PARAM_LIST, 1, {myHero.charName})
+    	Menu.HUDs = 1
     	end
     SendMsg("Loaded version: "..Version)
-    CheckSprites()
+    DownloadSprites()
+    LoadSprites()
     CheckUpdates()
 end
 
-function CheckSprites()
+	OtherType = {
+	["Udyr"] = true, ["Riven"] = true, ["TwistedFate"] = true,
+	}
+
+function LoadSprites()
+	if NotSprites then return end
+	if not OtherType[myHero.charName] then
+	MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png")  
+	elseif myHero.charName == "Riven" then
+	MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png") 
+	EzRiven = GetSprite("\\EzSprites\\EzRiven.png")
+	elseif myHero.charName == "Udyr" then
+	UdyrUrf = GetSprite("\\EzSprites\\UdyrUrf.png")
+	UdyrTurtle = GetSprite("\\EzSprites\\UdyrTurtle.png")
+	UdyrPhoenix = GetSprite("\\EzSprites\\UdyrPhoenix.png")
+	UdyrTiger = GetSprite("\\EzSprites\\UdyrTiger.png")
+	UdyrBear = GetSprite("\\EzSprites\\UdyrBear.png")
+	elseif myHero.charName == "TwistedFate" then
+	MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png") 
+	HrTwistedFate = GetSprite("\\EzSprites\\HrTwistedFate.png")
+	end
+end
+
+function DownloadSprites()
 	if not DirectoryExist(SPRITE_PATH.."EzSprites") then
     CreateDirectory(SPRITE_PATH.."EzSprites//")
 	end
-
-	if not IgnoreList[myHero.charName] then
-  	--[[local ServerVersionDATA = GetWebResult("http://raw.githubusercontent.com/timo62/GetChallengerEz/master/EzSprites/"..myHero.charName..".png")
-  	if not ServerVersionDATA then
+	if not OtherType[myHero.charName] then
+  	--[[local ServerVersionDATA = GetWebResult("http://raw.githubusercontent.com/timo62/GetChallengerEz/master/", "EzSprites/"..myHero.charName..".png")
+  	if ServerVersionDATA == nil then
   	SendMsg("Sprite not found in Dev GitHub")
   	NotSprites = true
   	return
@@ -52,7 +72,7 @@ function CheckSprites()
 	["Udyr"] = "UdyrUrf", "UdyrPhoenix", "UdyrBear", "UdyrTiger",
 	["TwistedFate"] = "HrTwistedFate",
 	}
-	if not FileExist(SPRITE_PATH.."EzSprites/"..List[myHero.charName]..".png") then
+	if OtherType[myHero.charName] and not FileExist(SPRITE_PATH.."EzSprites/"..List[myHero.charName]..".png") then
 	NotSprites = true
 	SendMsg("Downloading Sprites")
   	DownloadFile("http://raw.githubusercontent.com/timo62/GetChallengerEz/master/EzSprites/UdyrUrf.png", SPRITE_PATH.."EzSprites/UdyrUrf.png",function()end)
@@ -65,22 +85,6 @@ function CheckSprites()
   	SendMsg("Sprites Downloaded, press 2x F9")
   	end)
 	end
-if NotSprites then return end
-if not IgnoreList[myHero.charName] and myHero.charName ~= "Riven" then
-MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png")  
-elseif myHero.charName == "Riven" then
-MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png") 
-EzRiven = GetSprite("\\EzSprites\\EzRiven.png")
-elseif myHero.charName == "Udyr" then
-UdyrUrf = GetSprite("\\EzSprites\\UdyrUrf.png")
-UdyrTurtle = GetSprite("\\EzSprites\\UdyrTurtle.png")
-UdyrPhoenix = GetSprite("\\EzSprites\\UdyrPhoenix.png")
-UdyrTiger = GetSprite("\\EzSprites\\UdyrTiger.png")
-UdyrBear = GetSprite("\\EzSprites\\UdyrBear.png")
-elseif myHero.charName == "TwistedFate" then
-MyChamp = GetSprite("\\EzSprites\\"..myHero.charName..".png") 
-HrTwistedFate = GetSprite("\\EzSprites\\HrTwistedFate.png")
-end
 end
 
 function OnDraw()
@@ -125,7 +129,6 @@ function OnDraw()
     if Menu.HUDSettings.useHUD and not IgnoreList2[myHero.charName] then
 	DrawSprite()
 	end
-
 end
 
 function OnProcessSpell(unit, spell)
