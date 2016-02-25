@@ -1,11 +1,11 @@
-function OnDraw()
+--[[function OnDraw()
     for i = 1, myHero.buffCount do
         local tBuff = myHero:getBuff(i)
         if BuffIsValid(tBuff) then
                 DrawTextA(tBuff.name,12,20,20*i+20)
         end
     end
-end
+end]]
 
 function OnLoad()
 	QQQ = BarUnderObject()
