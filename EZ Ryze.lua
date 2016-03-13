@@ -9,7 +9,7 @@
 local PassiveStacks = 0
 local PassiveCharged = false
 
-local LocalVersion = "0.6"
+local LocalVersion = "1.0"
 local AutoUpdate = true
 
 local serveradress = "raw.githubusercontent.com"
@@ -58,8 +58,8 @@ local ts
 
         function SayHello()
             -- Print to the chat area
-            PrintChat("<font color=\"#AA0000\"><b>[Ez Ryze] </b></font>".."<font color=\"#01cc9c\"><b>Loaded! Good Luck!</b></font>")
-            PrintChat("<font color=\"#AA0000\"><b>[Ez Ryze] </b></font>".."<font color=\"#01cc9c\"><b>By: timo62</b></font>")
+            print('<font color=\"#72427a\">[Ez Scripts]</font><font color=\"#888888\"> - </font><font color=\"#01cc9c\">Ez Ryze Loaded.</font>')
+            print('<font color=\"#72427a\">[Ez Scripts]</font><font color=\"#888888\"> - </font><font color=\"#01cc9c\">'..GetUser()..' Have fun with this Script! :).</font>')
         end
 
         function OnLoad()
@@ -90,6 +90,7 @@ local ts
                     -- Create conditionals in your menu/keybinds or in certain situations
                     Menu.c:addParam("comboMode", "Set Combo Mode", SCRIPT_PARAM_LIST, 1, {"R W Q E", "W Q E Q"}) -- Combo list default set at 1 (Q W E R)
                     Menu.c:addParam("autoR", "Use R after x Stacks", SCRIPT_PARAM_SLICE, 2, 0, 4)
+                    Menu.c:addParam("autoRIF", "Only use R if QWE Ready", SCRIPT_PARAM_ONOFF, true)
 
                 --[[Menu:addSubMenu("Harass", "h")
                     Menu.h:addParam("x1", "-[    Ryze   ]-", SCRIPT_PARAM_INFO, "Ver 1.3")
@@ -125,14 +126,19 @@ local ts
                     Menu.draw:addParam("CDTracker", "CD Tracker", SCRIPT_PARAM_ONOFF, true)
 
                 Menu:addSubMenu("|->Target Selector", "TargetSelector")
-                        Menu.TargetSelector:addParam ("drawtext", "Draw Target Select Text", SCRIPT_PARAM_ONOFF, true)
-                        Menu.TargetSelector:addParam ("hitbox", "Target-Selector", SCRIPT_PARAM_LIST, 1, {"Hitbox", "3D Circle"})
+                    Menu.TargetSelector:addParam ("drawtext", "Draw Target Select Text", SCRIPT_PARAM_ONOFF, true)
+                    Menu.TargetSelector:addParam ("hitbox", "Target-Selector", SCRIPT_PARAM_LIST, 1, {"Hitbox", "3D Circle"})
+
+                Menu:addSubMenu("Skinchanger", "skin")
+                    Menu.skin:addParam("blank", "Choose your Skin!", SCRIPT_PARAM_INFO, " ")
 
 
 
                 ts = TargetSelector(TARGET_LOW_HP_PRIORITY,650)
                 ts.name = "Ryze"
                 Menu:addTS(ts)
+
+                SkinLoad()
         end
 
         function OnTick()
@@ -250,7 +256,7 @@ end
 
 
         function OnApplyBuff(source, unit, buff) 
-            if source and source.isMe and buff and buff.name and buff.name:find("ryzepassivecharged") then
+            if source and source.isMe and buff and buff.name and buff.name:find("RyzePassiveCharged") then
                 PassiveStacks = 1
                 PassiveCharged = true
             end
@@ -258,7 +264,7 @@ end
 
 
         function OnUpdateBuff(unit, buff, stacks)
-            if unit and unit.isMe and buff and buff.name and buff.name:find("ryzepassivestack") then
+            if unit and unit.isMe and buff and buff.name and buff.name:find("RyzePassiveStack") then
                 PassiveStacks = stacks
             end
         end
@@ -277,15 +283,17 @@ end
         -- Combo RWQE during you're passive
         function Combo1()
             if Menu.Key.combo and Rready and PassiveStacks >= Menu.c.autoR then
-                CastSpell(_R)
+               -- if Menu.c.autoRIF and Qready and Wready and Eready then
+                    CastSpell(_R)
+               -- else
+               --     CastSpell(_R)
+               -- end
 
             elseif Menu.Key.combo and Wready then
                 CastSpell(_W, Target)
 
-
             elseif Menu.Key.combo and Qready then
                 CastQ(Target)
-
             elseif Menu.Key.combo and Eready then
                 CastSpell(_E, Target)
             end
@@ -371,14 +379,14 @@ end
                     if Menu.l.useR then CastSpell(_R) end
                     if Menu.l.useW then CastSpell(_W, minion) end
                     if Menu.l.useE then CastSpell(_E, minion) end
-                    if Menu.l.useQ then CastQ(minion) end
+                    if Menu.l.useQ then CastSpell(_Q, minion.x, minion.z) end
                     
                 end
                 for _, minion in pairs(jungleMinions.objects) do
                     if Menu.l.useR then CastSpell(_R) end
                     if Menu.l.useW then CastSpell(_W, minion) end
                     if Menu.l.useE then CastSpell(_E, minion) end
-                    if Menu.l.useQ then CastQ(minion) end 
+                    if Menu.l.useQ then CastSpell(_Q, minion.x, minion.z) end 
                     
                 end
         end
@@ -433,7 +441,7 @@ end
             CastPosition, HitChance, HeroPosition = UPL:Predict(_Q, myHero, target, minion)
                 if Qready and HitChance >= Menu.pred.qhs then
                     DelayAction(function ()
-                        CastSpell(_Q, CastPosition.x,CastPosition.z)
+                        CastSpell(_Q, CastPosition.x, CastPosition.z)
                 end,0)
             end
         end
@@ -525,5 +533,35 @@ end
                     DrawCircle3D4(SelectedTarget.x, SelectedTarget.y, SelectedTarget.z)
                 end
 
+                --[[for i = 1, myHero.buffCount do
+                local tBuff = myHero:getBuff(i)
+                    if BuffIsValid(tBuff) then
+                        DrawTextA(tBuff.name,12,20,20*i+20)
+                    end
+                end]]
+
 
         end
+
+        -- Credits PvPSuite
+function SkinLoad()
+    Menu.skin:addParam('changeSkin', 'Change Skin', SCRIPT_PARAM_ONOFF, false);
+    Menu.skin:setCallback('changeSkin', function(nV)
+        if (nV) then
+            SetSkin(myHero, Menu.skin.skinID)
+        else
+            SetSkin(myHero, -1)
+        end
+    end)
+    Menu.skin:addParam('skinID', 'Skin', SCRIPT_PARAM_LIST, 1, {"Human", "Tribal", "Uncle", "Triumphant", "Professor", "Zombie", "Dark Crystal", "Pirate", "Whitebeard","Classic"})
+    Menu.skin:setCallback('skinID', function(nV)
+        if (Menu.skin.changeSkin) then
+            SetSkin(myHero, nV)
+        end
+    end)
+    
+    if (Menu.skin.changeSkin) then
+        SetSkin(myHero, Menu.skin.skinID)
+    end
+end
+-- Credits PvPSuite
